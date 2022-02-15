@@ -1,0 +1,8 @@
+{
+    "import": ".cspell-base.json",
+    "words": [
+        "htmlhint",
+        "ruleset",
+        "tagstart"
+    ]
+}
