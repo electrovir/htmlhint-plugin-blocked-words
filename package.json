@@ -16,7 +16,7 @@
     "main": "index.js",
     "scripts": {
         "format": "virmator format write",
-        "prepublishOnly": "npm run test:full",
+        "prepublishOnly": "tsc && npm run test:full",
         "spellcheck": "virmator spellcheck --extendable-config",
         "test": "jest --config ./src/jest/jest.config.ts",
         "test:full": "npm test && npm run spellcheck && virmator format check"
