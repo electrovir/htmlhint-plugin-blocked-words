@@ -15,12 +15,11 @@ allRules.forEach((customRule) => {
             testFunction(test.description, () => {
                 const options: Ruleset = {[customRule.id]: test.ruleOptions, ...test.otherOptions};
 
-                const messages = HTMLHint.verify(test.html, options);
+                const messages: string[] = HTMLHint.verify(test.html, options).map(
+                    (result) => result.message,
+                );
 
-                messages.forEach((message, index) => {
-                    const expectedMessage = test.failures?.[index];
-                    expect(message.message).toBe(expectedMessage);
-                });
+                expect(messages).toEqual(test.failures ?? []);
             });
         });
     });

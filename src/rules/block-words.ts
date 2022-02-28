@@ -11,7 +11,8 @@ type TrueBlock = Overwrite<
 
 const defaultBlockWordsOptions: BlockWordsOptions = {
     all: [],
-    attributes: [],
+    attributeNames: [],
+    attributeValues: [],
     tagNames: [],
     text: [],
 };
@@ -45,7 +46,7 @@ export function blockedWordMessage(
     blockedMatch: string,
     blockRegExp: RegExp,
     tagName?: string,
-    type?: string,
+    type?: 'text' | 'attribute' | 'tag name' | undefined,
 ): string {
     const contextMessage = type ? `${type} ` : '';
     const tagMessage = tagName ? ` in ${tagName}` : '';
@@ -94,7 +95,8 @@ function runReports({
 
 export type BlockWordsOptions = {
     all?: string[];
-    attributes?: string[];
+    attributeNames?: string[];
+    attributeValues?: string[];
     tagNames?: string[];
     text?: string[];
 };
@@ -137,15 +139,32 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
                     type: 'text',
                 });
             }
-            if (options.attributes && event.type === 'tagstart' && event.raw) {
-                const attributes = Object.entries(parser.getMapAttrs(event.attrs)).join(', ');
-                runReports({
-                    blockedWords: options.attributes,
-                    checkText: attributes,
-                    event,
-                    reporter,
-                    type: 'attribute',
-                });
+            if (event.type === 'tagstart' && event.raw) {
+                Object.entries(parser.getMapAttrs(event.attrs)).forEach(
+                    ([
+                        attributeName,
+                        attributeValue,
+                    ]) => {
+                        if (options.attributeValues) {
+                            runReports({
+                                blockedWords: options.attributeValues,
+                                checkText: attributeValue,
+                                event,
+                                reporter,
+                                type: 'attribute',
+                            });
+                        }
+                        if (options.attributeNames) {
+                            runReports({
+                                blockedWords: options.attributeNames,
+                                checkText: attributeName,
+                                event,
+                                reporter,
+                                type: 'attribute',
+                            });
+                        }
+                    },
+                );
             }
 
             if (event.raw && options.all) {
@@ -234,6 +253,92 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
             ],
         },
         {
+            description: 'should block all matches of attribute value',
+            html: `
+                <!-- htmlhint id-class-ad-disabled:false -->
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-ad-name-thing class="share-panel"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="other class names before share-panel"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="share-panel other class names after"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="class names before share-panel and class names after"></thing-ad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {attributeValues: ['(?:^|\\s)share-panel(?:$|\\s)']},
+            otherOptions: {'id-class-ad-disabled': true},
+            failures: [
+                blockedWordMessage(
+                    'share-panel',
+                    new RegExp('(?:^|\\s)share-panel(?:$|\\s)', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    ' share-panel',
+                    new RegExp('(?:^|\\s)share-panel(?:$|\\s)', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'share-panel ',
+                    new RegExp('(?:^|\\s)share-panel(?:$|\\s)', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    ' share-panel ',
+                    new RegExp('(?:^|\\s)share-panel(?:$|\\s)', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+            ],
+        },
+        {
+            description: 'should works with word boundaries',
+            html: `
+                <!-- htmlhint id-class-ad-disabled:false -->
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-ad-name-thing class="share-panel"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="other class names before share-panel"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="share-panel other class names after"></thing-ad-name-thing>
+                        <thing-ad-name-thing class="class names before share-panel and class names after"></thing-ad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {attributeValues: ['\\bshare-panel\\b']},
+            otherOptions: {'id-class-ad-disabled': true},
+            failures: [
+                blockedWordMessage(
+                    'share-panel',
+                    new RegExp('\\bshare-panel\\b', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'share-panel',
+                    new RegExp('\\bshare-panel\\b', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'share-panel',
+                    new RegExp('\\bshare-panel\\b', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'share-panel',
+                    new RegExp('\\bshare-panel\\b', 'g'),
+                    'thing-ad-name-thing',
+                    'attribute',
+                ),
+            ],
+        },
+        {
             description: 'should get disabled by htmlhint comment',
             html: `
                 <!-- htmlhint ${blockWordsRuleName}:false -->
@@ -245,6 +350,58 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
                     </body>
                 </html>`,
             ruleOptions: {all: ['bad-name']},
+        },
+        {
+            description: 'should block only attributes when set to do so',
+            html: `
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-bad-name-thing class="bad-name lots of other words bad-name more words bad-name"></thing-bad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {attributeValues: ['bad-name']},
+            failures: [
+                blockedWordMessage(
+                    'bad-name',
+                    new RegExp('bad-name', 'g'),
+                    'thing-bad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'bad-name',
+                    new RegExp('bad-name', 'g'),
+                    'thing-bad-name-thing',
+                    'attribute',
+                ),
+                blockedWordMessage(
+                    'bad-name',
+                    new RegExp('bad-name', 'g'),
+                    'thing-bad-name-thing',
+                    'attribute',
+                ),
+            ],
+        },
+        {
+            description: 'should block attribute names',
+            html: `
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-bad-name-thing bad-attribute-name="whatever"></thing-bad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {attributeNames: ['bad-attribute-name']},
+            failures: [
+                blockedWordMessage(
+                    'bad-attribute-name',
+                    new RegExp('bad-attribute-name', 'g'),
+                    'thing-bad-name-thing',
+                    'attribute',
+                ),
+            ],
         },
         {
             description: 'should block a word in tag names only',
