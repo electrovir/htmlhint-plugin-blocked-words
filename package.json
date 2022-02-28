@@ -1,6 +1,6 @@
 {
     "name": "htmlhint-plugin-blocked-words",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "homepage": "https://github.com/electrovir/htmlhint-plugin-blocked-words#readme",
     "bugs": {
         "url": "https://github.com/electrovir/htmlhint-plugin-blocked-words/issues"
@@ -13,10 +13,10 @@
         "name": "electrovir",
         "url": "https://github.com/electrovir"
     },
-    "main": "index.js",
+    "main": "dist/index.js",
     "scripts": {
         "format": "virmator format write",
-        "prepublishOnly": "npm run test:full",
+        "prepublishOnly": "rm -rf dist && tsc && npm run test:full",
         "spellcheck": "virmator spellcheck --extendable-config",
         "test": "jest --config ./src/jest/jest.config.ts",
         "test:full": "npm test && npm run spellcheck && virmator format check"

@@ -162,6 +162,16 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
             failures: [blockedWordMessage('bad-name', new RegExp('bad-name', 'g'), 'div')],
         },
         {
+            description: 'should work with default rules',
+            html: `<html><head></head><body>What do we have here?<div class="bad-name" class="oops"></div></body></html`,
+            ruleOptions: {all: ['bad-name']},
+            otherOptions: {'attr-no-duplication': true},
+            failures: [
+                'Duplicate of attribute name [ class ] was found.',
+                blockedWordMessage('bad-name', new RegExp('bad-name', 'g'), 'div'),
+            ],
+        },
+        {
             description: 'should block an all word in a tag name and class name',
             html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html`,
             ruleOptions: {all: ['bad-name']},
@@ -183,6 +193,11 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
                     'tag name',
                 ),
             ],
+        },
+        {
+            description: 'should not block anything when no options are given',
+            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html`,
+            ruleOptions: {},
         },
     ],
 });

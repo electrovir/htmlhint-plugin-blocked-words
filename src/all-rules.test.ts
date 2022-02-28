@@ -12,11 +12,9 @@ allRules.forEach((customRule) => {
 
         customRule.tests.forEach((test) => {
             it(test.description, () => {
-                const options: Ruleset = {[customRule.id]: test.ruleOptions};
+                const options: Ruleset = {[customRule.id]: test.ruleOptions, ...test.otherOptions};
 
                 const messages = HTMLHint.verify(test.html, options);
-
-                expect(messages.length).toBe(test.failures?.length ?? 0);
 
                 messages.forEach((message, index) => {
                     const expectedMessage = test.failures?.[index];
