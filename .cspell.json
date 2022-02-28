@@ -3,6 +3,8 @@
     "words": [
         "fsevents",
         "htmlhint",
+        "htmlhintrc",
+        "rulesdir",
         "ruleset",
         "tagstart"
     ]

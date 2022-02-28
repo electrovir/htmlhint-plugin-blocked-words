@@ -8,14 +8,15 @@
 .vscode/
 *.test.d.ts
 *.test.js
+dist/jest/
+dist/readme-examples/
 dist/test/
 scripts/
 snowpack.config.js
 snowpack.config.mjs
 src/
 static/
+test-html-files
 test-repos/
 tsconfig-base.json
 tsconfig.json
-test-html-files
-dist/jest

@@ -2,6 +2,7 @@ import {Overwrite, safeMatch} from 'augment-vir';
 import {Reporter} from 'htmlhint';
 import {Block} from 'htmlhint/htmlparser';
 import {createHtmlHintRule} from '../create-rule';
+import {BlockWordsOptions} from './block-words-options';
 
 type TrueBlock = Overwrite<
     Block,
@@ -92,14 +93,6 @@ function runReports({
         reporter.error(report, event.line, event.col, BlockWordsRule, event.raw ?? ''),
     );
 }
-
-export type BlockWordsOptions = {
-    all?: string[];
-    attributeNames?: string[];
-    attributeValues?: string[];
-    tagNames?: string[];
-    text?: string[];
-};
 
 export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
     id: blockWordsRuleName,
