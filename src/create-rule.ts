@@ -6,6 +6,7 @@ export type RuleTest<T> = {
     ruleOptions: T;
     otherOptions?: Record<string, any>;
     failures?: string[];
+    force?: true;
 };
 
 export type CustomRule<T> = Rule & {

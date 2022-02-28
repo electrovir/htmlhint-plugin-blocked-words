@@ -217,6 +217,36 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
             ],
         },
         {
+            description: 'should not interfere with override comments for default rules',
+            html: `
+                <!-- htmlhint id-class-ad-disabled:false -->
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-ad-name-thing class="bad-name"></thing-ad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {all: ['bad-name']},
+            otherOptions: {'id-class-ad-disabled': true},
+            failures: [
+                blockedWordMessage('bad-name', new RegExp('bad-name', 'g'), 'thing-ad-name-thing'),
+            ],
+        },
+        {
+            description: 'should get disabled by htmlhint comment',
+            html: `
+                <!-- htmlhint ${blockWordsRuleName}:false -->
+                <html>
+                    <head></head>
+                    <body>
+                        What do we have here?
+                        <thing-ad-name-thing class="bad-name"></thing-ad-name-thing>
+                    </body>
+                </html>`,
+            ruleOptions: {all: ['bad-name']},
+        },
+        {
             description: 'should block a word in tag names only',
             html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html>`,
             ruleOptions: {tagNames: ['bad-name']},
