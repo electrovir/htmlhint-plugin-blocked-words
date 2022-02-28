@@ -21,8 +21,24 @@ function checkOptions(input: any): input is BlockWordsOptions {
     return (
         input &&
         typeof input === 'object' &&
-        Object.keys(input).every((key) => allowedOptionKeys.includes(key))
+        Object.keys(input).every((key) => {
+            return (
+                allowedOptionKeys.includes(key) &&
+                Array.isArray(input[key]) &&
+                input[key].every((entry: any) => typeof entry === 'string')
+            );
+        })
     );
+}
+
+const blockWordsRuleName = 'block-words';
+
+function invalidOptionsMessage(invalidOptions: any): string {
+    return `Expected an object with keys from "${allowedOptionKeys.join(
+        ', ',
+    )}" and string array values for rule ${blockWordsRuleName} but got ${JSON.stringify(
+        invalidOptions,
+    )}`;
 }
 
 export function blockedWordMessage(
@@ -84,7 +100,7 @@ export type BlockWordsOptions = {
 };
 
 export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
-    id: 'block-words',
+    id: blockWordsRuleName,
     defaultOptions: defaultBlockWordsOptions,
     description:
         'Block a user defined set of words from appears in attributes. Like the default "id-class-ad-disabled" rule but more powerful as you as the user get to set the list of blocked words.',
@@ -93,17 +109,7 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
             return;
         }
         if (!checkOptions(options)) {
-            reporter.error(
-                `Expected an object with keys from "${allowedOptionKeys.join(
-                    ', ',
-                )}" and string array values for rule ${BlockWordsRule.id} but got ${JSON.stringify(
-                    options,
-                )}`,
-                1,
-                1,
-                BlockWordsRule,
-                '',
-            );
+            reporter.error(invalidOptionsMessage(options), 1, 1, BlockWordsRule, '');
             return;
         }
 
@@ -133,7 +139,6 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
             }
             if (options.attributes && event.type === 'tagstart' && event.raw) {
                 const attributes = Object.entries(parser.getMapAttrs(event.attrs)).join(', ');
-                console.log({attributes});
                 runReports({
                     blockedWords: options.attributes,
                     checkText: attributes,
@@ -157,13 +162,43 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
     tests: [
         {
             description: 'should block an easy word all word that is within a class',
-            html: `<html><head></head><body>What do we have here?<div class="bad-name"></div></body></html`,
+            html: `<html><head></head><body>What do we have here?<div class="bad-name"></div></body></html>`,
             ruleOptions: {all: ['bad-name']},
             failures: [blockedWordMessage('bad-name', new RegExp('bad-name', 'g'), 'div')],
         },
         {
+            description: 'should error on option properties that are not an array',
+            html: ``,
+            ruleOptions: {all: 'invalid-option'} as unknown as BlockWordsOptions,
+            failures: [invalidOptionsMessage({all: 'invalid-option'})],
+        },
+        {
+            description: 'should error on non-object options',
+            html: ``,
+            ruleOptions: 'invalid-option' as unknown as BlockWordsOptions,
+            failures: [invalidOptionsMessage('invalid-option')],
+        },
+        {
+            description: 'should error on property arrays that are not purely string arrays',
+            html: ``,
+            ruleOptions: {
+                all: [
+                    4,
+                    'invalid-option',
+                ],
+            } as unknown as BlockWordsOptions,
+            failures: [
+                invalidOptionsMessage({
+                    all: [
+                        4,
+                        'invalid-option',
+                    ],
+                }),
+            ],
+        },
+        {
             description: 'should work with default rules',
-            html: `<html><head></head><body>What do we have here?<div class="bad-name" class="oops"></div></body></html`,
+            html: `<html><head></head><body>What do we have here?<div class="bad-name" class="oops"></div></body></html>`,
             ruleOptions: {all: ['bad-name']},
             otherOptions: {'attr-no-duplication': true},
             failures: [
@@ -173,7 +208,7 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
         },
         {
             description: 'should block an all word in a tag name and class name',
-            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html`,
+            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html>`,
             ruleOptions: {all: ['bad-name']},
             failures: [
                 blockedWordMessage('bad-name', new RegExp('bad-name', 'g'), 'thing-bad-name-thing'),
@@ -183,7 +218,7 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
         },
         {
             description: 'should block a word in tag names only',
-            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html`,
+            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html>`,
             ruleOptions: {tagNames: ['bad-name']},
             failures: [
                 blockedWordMessage(
@@ -196,7 +231,7 @@ export const BlockWordsRule = createHtmlHintRule<BlockWordsOptions>({
         },
         {
             description: 'should not block anything when no options are given',
-            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html`,
+            html: `<html><head></head><body>What do we have here?<thing-bad-name-thing class="bad-name"></thing-bad-name-thing></body></html>`,
             ruleOptions: {},
         },
     ],
