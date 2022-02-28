@@ -22,6 +22,7 @@ jobs:
               run: |
                   npm ci
                   npm run test:full
+                  npx tsc
             - name: pack and set vars
               id: vars
               run: |
