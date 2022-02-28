@@ -36,5 +36,8 @@
     },
     "peerDependencies": {
         "htmlhint": "^1.1.2"
+    },
+    "optionalDependencies": {
+        "fsevents": "^2.3.2"
     }
 }
