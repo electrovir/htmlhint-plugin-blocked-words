@@ -6,6 +6,7 @@
         "htmlhintrc",
         "rulesdir",
         "ruleset",
+        "tagname",
         "tagstart"
     ]
 }
